@@ -8,6 +8,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -17,14 +21,6 @@ import java.util.Map;
 )
 public class LoginServlet extends HttpServlet
 {
-    private static final Map<String, String> userDatabase = new Hashtable<>();
-
-    static {
-        userDatabase.put("Nicholas", "password");
-        userDatabase.put("Sarah", "drowssap");
-        userDatabase.put("Mike", "wordpass");
-        userDatabase.put("John", "green");
-    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -61,9 +57,14 @@ public class LoginServlet extends HttpServlet
 
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+        try{
+        Class.forName("com.mysql.jdbc.Driver");
+        Connection con=DriverManager.getConnection(
+        "jdbc:mysql://localhost:3306/customersupport","root","lung3118");
+        Statement stmt=con.createStatement();
+        ResultSet rs=stmt.executeQuery("select * from user where UserID = '"+username+"' and password = '"+password+"'");
         if(username == null || password == null ||
-                !LoginServlet.userDatabase.containsKey(username) ||
-                !password.equals(LoginServlet.userDatabase.get(username)))
+                !rs.next())
         {
             request.setAttribute("loginFailed", true);
             request.getRequestDispatcher("/WEB-INF/jsp/view/login.jsp")
@@ -75,5 +76,8 @@ public class LoginServlet extends HttpServlet
             request.changeSessionId();
             response.sendRedirect("tickets");
         }
+        con.close();
+        }catch(Exception e){ System.out.println(e);}
     }
 }
+

@@ -15,6 +15,9 @@
         <a href="<c:url value="/tickets">
             <c:param name="action" value="create" />
         </c:url>">Create a Ticket</a><br />
+        <a href="<c:url value="/tickets">
+        	<c:param name="action" value="search" />
+        </c:url>">Search a Ticket</a><br />
         <a href="<c:url value="/sessions" />">List Sessions</a><br />
         <a href="<c:url value="/login?logout" />">Log Out</a><br />
         <jsp:invoke fragment="extraNavigationContent" />

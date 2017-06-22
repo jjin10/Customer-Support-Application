@@ -11,7 +11,10 @@ import javax.servlet.http.Part;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -49,6 +52,9 @@ public class TicketServlet extends HttpServlet
             case "download":
                 this.downloadAttachment(request, response);
                 break;
+            case "search":
+            	this.searchTicket(request, response);
+                break;
             case "list":
             default:
                 this.listTickets(request, response);
@@ -68,11 +74,22 @@ public class TicketServlet extends HttpServlet
             case "create":
                 this.createTicket(request, response);
                 break;
+            case "search":
+                this.displayTicket(request, response);
+                break;
             case "list":
             default:
                 response.sendRedirect("tickets");
                 break;
         }
+    }
+    
+    private void searchTicket(HttpServletRequest request,
+            					HttpServletResponse response)
+            throws ServletException, IOException
+    {
+    	request.getRequestDispatcher("/WEB-INF/jsp/view/searchTicket.jsp")
+    	.forward(request, response);
     }
 
     private void showTicketForm(HttpServletRequest request,
@@ -168,6 +185,39 @@ public class TicketServlet extends HttpServlet
         }
 
         response.sendRedirect("tickets?action=view&ticketId=" + id);
+    }
+    
+    private void displayTicket(HttpServletRequest request,
+    						  HttpServletResponse response)
+    		throws ServletException, IOException
+    {
+    	Map<Integer, Ticket> displayDatabase = new LinkedHashMap<>();
+    	String startDate = request.getParameter("startDate");
+    	String endDate = request.getParameter("endDate");
+    	
+    	String sdFormat = startDate.substring(6, 10) + "-" + startDate.substring(0, 2) + "-" + startDate.substring(3, 5);
+    	String edFormat = endDate.substring(6, 10) + "-" + endDate.substring(0, 2) + "-" + endDate.substring(3, 5);
+    	
+    	LocalDate startDay = LocalDate.parse(sdFormat);
+    	LocalDate endDay = LocalDate.parse(edFormat);
+    	
+    	ZoneId systemZone = ZoneId.systemDefault();
+    	
+    	Instant startInstant = startDay.atStartOfDay(systemZone).toInstant();
+    	Instant endInstant = endDay.atStartOfDay(systemZone).toInstant();
+    	
+    	endInstant = endInstant.plus(Duration.ofDays(1));
+    	
+    	for (Map.Entry<Integer, Ticket> entry : this.ticketDatabase.entrySet()) {
+    	    if (entry.getValue().getDateCreated().isAfter(startInstant) && entry.getValue().getDateCreated().isBefore(endInstant)) {
+    	    	displayDatabase.put(entry.getKey(), entry.getValue());
+    	    }
+    	}
+    	
+    	request.setAttribute("ticketDatabase", displayDatabase);
+
+        request.getRequestDispatcher("/WEB-INF/jsp/view/displayTickets.jsp")
+                .forward(request, response);
     }
 
     private Attachment processAttachment(Part filePart)
